@@ -44,12 +44,15 @@ def calculate(expr: str):
         return {"ok": False, "expr": expr, "error": str(e)}
 
 # TODO GET /hisory
+
 @app.get("/history")
 def get_history(limit: int = Query(50, ge=1, le=HISTORY_MAX)):
     # Return most recent first
     return list(history)[:limit]
 
+
 # TODO DELETE /history
 @app.delete("/history")
-def clreate_history(limit: int = HISTORY_MAX):
-    return history[-limit:]
+def clear_history():
+    history.clear()
+    return {"ok": True}
