@@ -1,7 +1,7 @@
 import math
 from collections import deque
 from datetime import datetime
-from fastapi import FastAPI, Query
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from asteval import Interpreter
 
@@ -32,27 +32,21 @@ def calculate(expr: str):
             msg = "; ".join(str(e.get_error()) for e in aeval.error)
             aeval.error.clear()
             return {"ok": False, "expr": expr, "result": "", "error": msg}
-        # TODO: Add history
-        # Record into history (most recent first)
         history.appendleft({
+            "timestamp": datetime.now().isoformat() + "Z",
             "expr": expr,
             "result": result,
-            "time": datetime.utcnow().isoformat() + "Z",
         })
         return {"ok": True, "expr": expr, "result": result, "error": ""}
     except Exception as e:
         return {"ok": False, "expr": expr, "error": str(e)}
 
-# TODO GET /hisory
 
 @app.get("/history")
-def get_history(limit: int = Query(50, ge=1, le=HISTORY_MAX)):
-    # Return most recent first
-    return list(history)[:limit]
+def get_history(limit: int = 50):
+    return list(history)[: max(0, min(limit, HISTORY_MAX))]
 
-
-# TODO DELETE /history
 @app.delete("/history")
 def clear_history():
     history.clear()
-    return {"ok": True}
+    return {"ok": True, "cleared": True}
