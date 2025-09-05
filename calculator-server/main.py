@@ -1,11 +1,13 @@
 import math
 from collections import deque
 from datetime import datetime
-from fastapi import FastAPI, Query
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from asteval import Interpreter
+from typing import List
 
 from calculator import expand_percent
+from models import Expression, CalculatorLog
 
 HISTORY_MAX = 1000
 history = deque(maxlen=HISTORY_MAX)
@@ -24,35 +26,30 @@ aeval = Interpreter(minimal=True, usersyms={"pi": math.pi, "e": math.e})
 
 
 @app.post("/calculate")
-def calculate(expr: str):
+def calculate(expression: Expression):
     try:
-        code = expand_percent(expr)
+        code = expression.expand_percent()
         result = aeval(code)
         if aeval.error:
             msg = "; ".join(str(e.get_error()) for e in aeval.error)
             aeval.error.clear()
-            return {"ok": False, "expr": expr, "result": "", "error": msg}
-        # TODO: Add history
-        # Record into history (most recent first)
+            return {"ok": False, "expr": expression.expr, "result": "", "error": msg}
         history.appendleft({
-            "expr": expr,
+            "timestamp": datetime.now().isoformat() + "Z",
+            "expr": expression.expr,
             "result": result,
-            "time": datetime.utcnow().isoformat() + "Z",
         })
-        return {"ok": True, "expr": expr, "result": result, "error": ""}
+        return {"ok": True, "expr": expression.expr, "result": result, "error": ""}
     except Exception as e:
-        return {"ok": False, "expr": expr, "error": str(e)}
-
-# TODO GET /hisory
-
-@app.get("/history")
-def get_history(limit: int = Query(50, ge=1, le=HISTORY_MAX)):
-    # Return most recent first
-    return list(history)[:limit]
+        return {"ok": False, "expr": expression.expr, "error": str(e)}
 
 
-# TODO DELETE /history
+@app.get("/history", response_model=List[CalculatorLog])
+def get_history(limit: int = 50):
+    history_list = list(history)[: max(0, min(limit, HISTORY_MAX))]
+    return [CalculatorLog(**entry) for entry in history_list]
+
 @app.delete("/history")
 def clear_history():
     history.clear()
-    return {"ok": True}
+    return {"ok": True, "cleared": True}
