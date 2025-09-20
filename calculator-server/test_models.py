@@ -1,5 +1,5 @@
 import pytest
-from calculator import expand_percent  # import your function
+from app.dependencies import expand_percent
 
 def test_add_percent():
     """Test addition where B% means 'B percent of A'."""

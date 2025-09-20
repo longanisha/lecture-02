@@ -120,8 +120,12 @@ async function equals() {
     if (!sendExpr) return;
 
     try {
-        const url = `${API_BASE}/calculate?expr=${encodeURIComponent(sendExpr)}`;
-        const res = await fetch(url, { method: "POST" });
+        const url = `${API_BASE}/calculate`;
+        const res = await fetch(url, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ expr: sendExpr })
+        });
         const data = await res.json();
 
         if (data && data.ok) {

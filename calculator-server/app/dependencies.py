@@ -1,5 +1,9 @@
 import re
+from collections import deque
+from typing import Generator
 
+HISTORY_MAX = 1000
+history = deque(maxlen=HISTORY_MAX)
 
 _percent_pair = re.compile(r"""
     (?P<a>\d+(?:\.\d+)?)
@@ -7,6 +11,7 @@ _percent_pair = re.compile(r"""
     (?P<b>\d+(?:\.\d+)?)%
 """, re.VERBOSE)
 _number_percent = re.compile(r"(?P<n>\d+(?:\.\d+)?)%")
+
 
 def expand_percent(expr: str) -> str:
     """Handle A op B% and standalone N% patterns."""
@@ -29,3 +34,7 @@ def expand_percent(expr: str) -> str:
     s = _number_percent.sub(lambda m: f"({m.group('n')}/100)", s)
     return s
 
+
+def get_history() -> Generator[deque, None, None]:
+    """Dependency to get the in-memory history."""
+    yield history
